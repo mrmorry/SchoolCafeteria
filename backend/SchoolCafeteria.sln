@@ -1,0 +1,52 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchoolCafeteria.Domain", "src\SchoolCafeteria.Domain\SchoolCafeteria.Domain.csproj", "{EECF7347-99CE-4D9B-B20E-218A991ACD26}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchoolCafeteria.Application", "src\SchoolCafeteria.Application\SchoolCafeteria.Application.csproj", "{8760B339-0A21-48A5-BF0A-F10BC6AC854C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchoolCafeteria.Infrastructure", "src\SchoolCafeteria.Infrastructure\SchoolCafeteria.Infrastructure.csproj", "{E384D101-092D-465F-9CCE-A89E79D491E5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchoolCafeteria.Api", "src\SchoolCafeteria.Api\SchoolCafeteria.Api.csproj", "{D4CD8D80-FEEE-4020-94F8-61E47F848C4F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchoolCafeteria.UnitTests", "tests\SchoolCafeteria.UnitTests\SchoolCafeteria.UnitTests.csproj", "{EB741B22-30E4-4C17-AE92-63D0836BE62B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SchoolCafeteria.IntegrationTests", "tests\SchoolCafeteria.IntegrationTests\SchoolCafeteria.IntegrationTests.csproj", "{ACA8630E-6B89-46AC-9FB0-F2A150AD1EA6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EECF7347-99CE-4D9B-B20E-218A991ACD26}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EECF7347-99CE-4D9B-B20E-218A991ACD26}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EECF7347-99CE-4D9B-B20E-218A991ACD26}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EECF7347-99CE-4D9B-B20E-218A991ACD26}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8760B339-0A21-48A5-BF0A-F10BC6AC854C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8760B339-0A21-48A5-BF0A-F10BC6AC854C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8760B339-0A21-48A5-BF0A-F10BC6AC854C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8760B339-0A21-48A5-BF0A-F10BC6AC854C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E384D101-092D-465F-9CCE-A89E79D491E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E384D101-092D-465F-9CCE-A89E79D491E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E384D101-092D-465F-9CCE-A89E79D491E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E384D101-092D-465F-9CCE-A89E79D491E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4CD8D80-FEEE-4020-94F8-61E47F848C4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4CD8D80-FEEE-4020-94F8-61E47F848C4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4CD8D80-FEEE-4020-94F8-61E47F848C4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4CD8D80-FEEE-4020-94F8-61E47F848C4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB741B22-30E4-4C17-AE92-63D0836BE62B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB741B22-30E4-4C17-AE92-63D0836BE62B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB741B22-30E4-4C17-AE92-63D0836BE62B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB741B22-30E4-4C17-AE92-63D0836BE62B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ACA8630E-6B89-46AC-9FB0-F2A150AD1EA6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ACA8630E-6B89-46AC-9FB0-F2A150AD1EA6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ACA8630E-6B89-46AC-9FB0-F2A150AD1EA6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ACA8630E-6B89-46AC-9FB0-F2A150AD1EA6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

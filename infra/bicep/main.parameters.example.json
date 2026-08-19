@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": { "value": "dev" },
+    "hostingModel": { "value": "appservice" },
+    "sqlAdminLogin": { "value": "schoolcafeteria_admin" },
+    "sqlAdminPassword": { "value": "REPLACE_VIA_PIPELINE_SECRET" },
+    "jwtSigningKey": { "value": "REPLACE_VIA_PIPELINE_SECRET" },
+    "apiImage": { "value": "REPLACE_WITH_ACR_LOGIN_SERVER/schoolcafeteria-api" },
+    "webImage": { "value": "REPLACE_WITH_ACR_LOGIN_SERVER/schoolcafeteria-web" },
+    "imageTag": { "value": "latest" }
+  }
+}

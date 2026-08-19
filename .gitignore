@@ -1,0 +1,30 @@
+# .NET
+backend/**/bin/
+backend/**/obj/
+*.user
+*.suo
+
+# Node / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/coverage/
+
+# Environment / secrets
+.env
+.env.local
+**/appsettings.Local.json
+**/appsettings.Production.json
+
+# IDE
+.vs/
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local runtime data
+data/
+storage-data/
