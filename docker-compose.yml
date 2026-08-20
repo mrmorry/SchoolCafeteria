@@ -1,0 +1,73 @@
+name: schoolcafeteria
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:?Defina SQL_SA_PASSWORD en su archivo .env}
+      MSSQL_PID: Developer
+    ports:
+      - "1433:1433"
+    volumes:
+      - sql-data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    ports:
+      - "8025:8025" # web UI to inspect sent emails
+      - "1025:1025" # SMTP
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: src/SchoolCafeteria.Api/Dockerfile
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__Default: "Server=sqlserver,1433;Database=SchoolCafeteria;User Id=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True;"
+      Jwt__SigningKey: ${JWT_SIGNING_KEY:?Defina JWT_SIGNING_KEY en su archivo .env}
+      Jwt__Issuer: SchoolCafeteria
+      Jwt__Audience: SchoolCafeteria.Clients
+      Email__Smtp__Host: mailhog
+      Email__Smtp__Port: "1025"
+      Email__Smtp__UseAuth: "false"
+      Payments__Sandbox__WebhookSecret: ${PAYMENTS_SANDBOX_WEBHOOK_SECRET:?Defina PAYMENTS_SANDBOX_WEBHOOK_SECRET en su archivo .env}
+      Payments__Sandbox__CheckoutBaseUrl: "http://localhost:3000/pay/sandbox"
+      Storage__Local__RootPath: /data/storage
+      Cors__AllowedOrigins__0: "http://localhost:3000"
+    ports:
+      - "5000:8080"
+    volumes:
+      - storage-data:/data/storage
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:5000
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:5000
+    ports:
+      - "3000:3000"
+
+volumes:
+  sql-data:
+  storage-data:

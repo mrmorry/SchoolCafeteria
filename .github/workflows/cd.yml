@@ -1,0 +1,88 @@
+name: CD — Build, Push & Deploy to Azure
+
+# Manual/staging-gated pipeline: pushes images to Azure Container Registry and deploys the Bicep
+# templates. Requires repository secrets: AZURE_CREDENTIALS (federated OIDC or service principal
+# JSON), ACR_LOGIN_SERVER, AZURE_RESOURCE_GROUP, SQL_ADMIN_PASSWORD, JWT_SIGNING_KEY.
+# Nothing in this file contains a real secret — all values come from GitHub encrypted secrets.
+on:
+  workflow_dispatch:
+    inputs:
+      environmentName:
+        description: 'Target environment (dev, staging, prod)'
+        required: true
+        default: 'dev'
+      hostingModel:
+        description: 'appservice or containerapps'
+        required: true
+        default: 'appservice'
+
+permissions:
+  id-token: write # enables OIDC login to Azure without a long-lived secret
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.vars.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: vars
+        run: echo "tag=${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: ACR login
+        run: az acr login --name $(echo "${{ secrets.ACR_LOGIN_SERVER }}" | cut -d'.' -f1)
+
+      - name: Build & push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: backend
+          file: backend/src/SchoolCafeteria.Api/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/schoolcafeteria-api:${{ steps.vars.outputs.tag }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/schoolcafeteria-api:latest
+
+      - name: Build & push web image
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: true
+          build-args: |
+            NEXT_PUBLIC_API_BASE_URL=https://${{ secrets.API_PUBLIC_HOSTNAME }}
+          tags: |
+            ${{ secrets.ACR_LOGIN_SERVER }}/schoolcafeteria-web:${{ steps.vars.outputs.tag }}
+            ${{ secrets.ACR_LOGIN_SERVER }}/schoolcafeteria-web:latest
+
+  deploy-infra:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy Bicep
+        uses: azure/arm-deploy@v2
+        with:
+          resourceGroupName: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          template: infra/bicep/main.bicep
+          parameters: >
+            environmentName=${{ github.event.inputs.environmentName }}
+            hostingModel=${{ github.event.inputs.hostingModel }}
+            sqlAdminPassword=${{ secrets.SQL_ADMIN_PASSWORD }}
+            jwtSigningKey=${{ secrets.JWT_SIGNING_KEY }}
+            apiImage=${{ secrets.ACR_LOGIN_SERVER }}/schoolcafeteria-api
+            webImage=${{ secrets.ACR_LOGIN_SERVER }}/schoolcafeteria-web
+            imageTag=${{ needs.build-and-push.outputs.image-tag }}
+          failOnStdErr: false
