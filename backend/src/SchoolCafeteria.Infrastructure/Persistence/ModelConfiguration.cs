@@ -156,17 +156,21 @@ public static class ModelConfiguration
         b.Entity<SystemSetting>().HasIndex(s => new { s.SchoolId, s.Key }).IsUnique();
     }
 
-    /// <summary>Applies RowVersion-as-concurrency-token and decimal defaults across every entity
-    /// that declares them, so new entities pick these up without repeating boilerplate.</summary>
+    /// <summary>
+    /// Applies RowVersion-as-concurrency-token across every entity that declares it. The token is
+    /// app-managed (stamped with a new value by AuditSaveChangesInterceptor on every insert/update)
+    /// rather than a SQL Server-native "rowversion" auto-generated column: that store-generated
+    /// approach only works against SQL Server, and this project's tests deliberately run against
+    /// SQLite for real transaction support — an app-managed token behaves identically on both.
+    /// </summary>
     private static void ApplyGlobalConventions(ModelBuilder b)
     {
         foreach (var entityType in b.Model.GetEntityTypes())
         {
             if (entityType.FindProperty(nameof(Domain.Common.BaseEntity.RowVersion)) is { } rowVersion)
             {
-                rowVersion.SetColumnType("rowversion");
                 rowVersion.IsConcurrencyToken = true;
-                rowVersion.ValueGenerated = Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.OnAddOrUpdate;
+                rowVersion.ValueGenerated = Microsoft.EntityFrameworkCore.Metadata.ValueGenerated.Never;
             }
         }
     }

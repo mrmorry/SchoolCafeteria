@@ -244,7 +244,7 @@ public class SaleService
         return employee?.Email;
     }
 
-    private async Task<SaleDto> ToDtoAsync(Sale sale, CancellationToken ct, List<SaleLine>? linesOverride = null)
+    private async Task<SaleDto> ToDtoAsync(Sale sale, CancellationToken ct, ICollection<SaleLine>? linesOverride = null)
     {
         var buyer = await _db.Buyers.FirstAsync(b => b.Id == sale.BuyerId, ct);
         var wallet = await _db.Wallets.FirstAsync(w => w.BuyerId == sale.BuyerId, ct);

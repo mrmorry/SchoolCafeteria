@@ -49,9 +49,10 @@ public class ExceptionHandlingMiddleware
                 problem.Extensions["code"] = bre.Code;
             problem.Extensions["correlationId"] = context.TraceIdentifier;
 
-            context.Response.ContentType = "application/problem+json";
             context.Response.StatusCode = (int)status;
-            await context.Response.WriteAsJsonAsync(problem);
+            // WriteAsJsonAsync overwrites Response.ContentType with "application/json" unless the
+            // RFC 7807 media type is passed explicitly here.
+            await context.Response.WriteAsJsonAsync(problem, options: null, contentType: "application/problem+json");
         }
     }
 }

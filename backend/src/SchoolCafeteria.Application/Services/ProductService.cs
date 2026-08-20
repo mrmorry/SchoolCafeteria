@@ -84,7 +84,7 @@ public class ProductService
 
     public async Task<PagedResult<ProductDto>> SearchAsync(Guid schoolId, PagedRequest request, Guid? categoryId, CancellationToken ct = default)
     {
-        var query = _db.Products.Where(p => p.SchoolId == schoolId && !p.IsDeleted).Include(p => p.Category);
+        IQueryable<Product> query = _db.Products.Where(p => p.SchoolId == schoolId && !p.IsDeleted).Include(p => p.Category);
         if (categoryId.HasValue) query = query.Where(p => p.CategoryId == categoryId.Value);
         if (!string.IsNullOrWhiteSpace(request.Search))
         {

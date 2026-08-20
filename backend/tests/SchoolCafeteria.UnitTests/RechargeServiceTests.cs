@@ -54,9 +54,11 @@ public class RechargeServiceTests : IDisposable
         var wallet = db.Wallets.Single(w => w.Id == _walletId);
         Assert.Equal(25m, wallet.Balance); // credited once, not 50
 
+        // Unique (Provider, ExternalEventId) means only the first delivery is ever persisted — the
+        // second is recognized and short-circuited before any insert is attempted.
         var webhookRows = db.PaymentWebhooks.Count(w => w.ExternalEventId == "evt-001");
-        Assert.Equal(2, webhookRows); // both deliveries are recorded for traceability...
-        Assert.Equal(1, db.WalletTransactions.Count(t => t.Type == WalletTransactionType.Recharge)); // ...but only one ledger entry exists
+        Assert.Equal(1, webhookRows);
+        Assert.Equal(1, db.WalletTransactions.Count(t => t.Type == WalletTransactionType.Recharge)); // credited once, not twice
     }
 
     [Fact]

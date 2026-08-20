@@ -42,7 +42,11 @@ public class SmtpEmailSender : IEmailSender
         {
             await client.ConnectAsync(host, port, SecureSocketOptions.Auto, ct);
             if (useAuth)
-                await client.AuthenticateAsync(_configuration["Email:Smtp:User"], _configuration["Email:Smtp:Password"], ct);
+            {
+                var user = _configuration["Email:Smtp:User"] ?? throw new InvalidOperationException("Email:Smtp:User no configurado.");
+                var password = _configuration["Email:Smtp:Password"] ?? throw new InvalidOperationException("Email:Smtp:Password no configurado.");
+                await client.AuthenticateAsync(user, password, ct);
+            }
             await client.SendAsync(message, ct);
             await client.DisconnectAsync(true, ct);
         }

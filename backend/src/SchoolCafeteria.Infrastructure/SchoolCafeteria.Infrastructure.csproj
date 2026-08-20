@@ -15,9 +15,15 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
-    <PackageReference Include="MailKit" Version="4.7.1" />
+    <PackageReference Include="MailKit" Version="4.17.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.2" />
+  </ItemGroup>
+
+  <!-- Brings in IHttpContextAccessor, ClaimsPrincipal.FindFirstValue, IConfigurationSection.Get<T>,
+       AddHttpContextAccessor and the rest of the ASP.NET Core shared framework — the old
+       Microsoft.AspNetCore.Http.Abstractions NuGet package (2.2.0) does not include these. -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
   <ItemGroup>

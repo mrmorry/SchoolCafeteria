@@ -55,6 +55,12 @@ public class AuditSaveChangesInterceptor : SaveChangesInterceptor
                 if (entry.State == EntityState.Modified) auditable.UpdatedBy = _currentUser.UserId;
             }
 
+            // App-managed optimistic concurrency token (see ModelConfiguration.ApplyGlobalConventions):
+            // a fresh value on every insert/update is what WalletLedgerService/InventoryLedgerService
+            // rely on to detect a concurrent write via DbUpdateConcurrencyException.
+            if (entry.Entity is BaseEntity baseEntity && entry.State is EntityState.Added or EntityState.Modified)
+                baseEntity.RowVersion = Guid.NewGuid().ToByteArray();
+
             var entityName = entry.Entity.GetType().Name;
             var idProperty = entry.Properties.FirstOrDefault(p => p.Metadata.Name == "Id");
 

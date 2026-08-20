@@ -135,8 +135,11 @@ public class RechargeService
         var signatureValid = _paymentGateway.VerifyWebhookSignature(rawPayload, headers);
         var parsed = _paymentGateway.ParseWebhook(rawPayload);
 
+        // Unique (Provider, ExternalEventId) means exactly one row can ever exist per event — a
+        // repeated delivery is recognized here and never even attempts a second insert.
         var already = await _db.PaymentWebhooks
             .AnyAsync(w => w.Provider == provider && w.ExternalEventId == parsed.ExternalEventId, ct);
+        if (already) return;
 
         var webhook = new PaymentWebhook
         {
@@ -148,7 +151,7 @@ public class RechargeService
         };
         _db.PaymentWebhooks.Add(webhook);
 
-        if (already || !signatureValid)
+        if (!signatureValid)
         {
             webhook.Processed = false;
             await _db.SaveChangesAsync(ct);
