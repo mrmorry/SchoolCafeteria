@@ -31,6 +31,14 @@ public class User : SchoolScopedEntity
     public DateTime? LockedUntilUtc { get; set; }
     public DateTime? LastLoginAtUtc { get; set; }
 
+    /// <summary>
+    /// Microsoft Entra ID object id (the "oid" claim), set the first time this account signs in
+    /// via Entra ID. Authentication can happen through Entra ID or through the local
+    /// email/password flow — either way, authorization always flows through this same User's
+    /// UserRole/RolePermission rows, so permissions never depend on which login method was used.
+    /// </summary>
+    public string? EntraObjectId { get; set; }
+
     /// <summary>Links to Guardian, Employee or Student when the user is that person's login.</summary>
     public Guid? GuardianId { get; set; }
     public Guardian? Guardian { get; set; }

@@ -14,7 +14,11 @@ COPY . .
 # Build-time public config: Next.js inlines NEXT_PUBLIC_* at build time, so it must be provided
 # as a build arg (docker-compose passes it) rather than only as a runtime env var.
 ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
+ARG NEXT_PUBLIC_ENTRA_CLIENT_ID=
+ARG NEXT_PUBLIC_ENTRA_TENANT_ID=
 ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_ENTRA_CLIENT_ID=$NEXT_PUBLIC_ENTRA_CLIENT_ID
+ENV NEXT_PUBLIC_ENTRA_TENANT_ID=$NEXT_PUBLIC_ENTRA_TENANT_ID
 RUN npm run build
 
 # ---- Runtime stage -------------------------------------------------------------

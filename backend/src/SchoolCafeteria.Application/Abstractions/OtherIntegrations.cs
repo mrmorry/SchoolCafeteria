@@ -45,6 +45,25 @@ public record ExternalStudentRecord(
     bool Active);
 
 /// <summary>
+/// Validates an ID token issued by an external identity provider (Microsoft Entra ID) and returns
+/// the normalized claims AuthService needs to resolve or link a local staff User. Kept separate
+/// from ITokenService (which issues *our own* JWTs) — this interface only ever consumes tokens
+/// minted elsewhere. No concrete provider is wired against a real tenant in this build (see
+/// docs/06-runbook.md); EntraIdTokenValidator implements this against the standard Entra ID OIDC
+/// discovery document once TenantId/ClientId are configured.
+/// </summary>
+public interface IEntraIdTokenValidator
+{
+    /// <summary>True once TenantId/ClientId/Instance are all configured — lets callers fail with a
+    /// clear "not configured" business error instead of an obscure network/validation failure.</summary>
+    bool IsConfigured { get; }
+
+    Task<ExternalIdentityClaims> ValidateAsync(string idToken, CancellationToken ct = default);
+}
+
+public record ExternalIdentityClaims(string ObjectId, string Email, string DisplayName);
+
+/// <summary>
 /// Decouples the API from any specific RFID reader hardware. The default operating mode is
 /// "keyboard wedge" (the reader types the UID into a focused input on the client) which needs no
 /// server-side contract beyond receiving the UID string. This interface exists for future

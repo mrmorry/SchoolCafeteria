@@ -12,16 +12,35 @@ Toda la configuración vive en la tabla `SystemSetting` (pantalla `/settings`, r
 | `wallet.allow_negative_balance` | Si se permiten compras que dejen saldo negativo | `false` |
 | `pos.allow_sales_without_stock` | Si el POS puede vender sin existencias | `false` |
 
-## Usuarios, roles y permisos
+## Usuarios, roles y permisos (`/roles`, requiere permiso `users.manage`)
 
-- Los roles y su matriz de permisos se administran hoy directamente en base de datos
-  (`Role`, `Permission`, `RolePermission`, `UserRole`) — ver `docs/05-roles-permisos.md` para la
-  matriz vigente y `docs/06-runbook.md` §6 para el estado de la pantalla de administración (aún no
-  incluida en el frontend de este build).
-- Para crear un nuevo usuario interno: insertar en `User` con `PasswordHash` generado por
-  `IPasswordHasher` (nunca en texto plano) y asociar `UserRole`.
-- Para un nuevo tutor: crear el `Guardian`, luego un `User` con `GuardianId` apuntando a él y el
-  rol `Tutor`.
+- **Roles**: crear un rol nuevo, y para cada rol (predefinido o propio) marcar/desmarcar los
+  permisos agrupados por módulo; "Guardar permisos" reemplaza el conjunto completo asignado a ese
+  rol. Los roles predefinidos del sistema (Administrador, Finanzas, Supervisor, Operador, Auditor,
+  Tutor) no pueden eliminarse; ningún rol puede eliminarse mientras tenga usuarios asignados.
+- **Usuarios de personal**: crear una cuenta de staff (correo, nombre, contraseña temporal de al
+  menos 12 caracteres, rol inicial opcional), asignarle roles adicionales, y activar/desactivar la
+  cuenta (clic sobre la insignia de estado). Esta sección es solo para personal interno — los
+  tutores se crean automáticamente al vincularlos a un estudiante, y los estudiantes/empleados no
+  tienen cuenta de login propia salvo que se configure explícitamente.
+- Para un nuevo tutor: crear el `Guardian` desde `/guardians` (o al dar de alta un estudiante),
+  luego un `User` con `GuardianId` apuntando a él y el rol `Tutor` — este flujo aún se hace por
+  API/base de datos, no tiene pantalla dedicada en este build.
+
+### Inicio de sesión con Microsoft Entra ID (personal)
+
+El personal (no tutores ni estudiantes) puede iniciar sesión con su cuenta de Microsoft Entra ID
+además de correo/contraseña, una vez que el colegio conecta un tenant real — ver
+`docs/06-runbook.md` §8 para el paso a paso completo. Puntos clave:
+
+- El login con Entra ID **nunca crea una cuenta automáticamente**: la cuenta debe existir primero
+  en `/roles` → "Usuarios de personal", con el mismo correo que la persona usa en Microsoft.
+- La primera vez que alguien inicia sesión con Microsoft, el sistema vincula esa cuenta a su
+  `User` local por correo; de ahí en adelante el vínculo es por el identificador de objeto de
+  Entra ID, no por correo.
+- Mientras no haya un tenant configurado (`EntraId:TenantId`/`ClientId` vacíos), el botón
+  "Iniciar sesión con Microsoft" simplemente no aparece — el login local sigue funcionando sin
+  ningún cambio.
 
 ## Integraciones
 

@@ -6,9 +6,9 @@ reportes financieros y auditoría completa. Construida para operar con un solo c
 versión, con aislamiento por `SchoolId` ya presente en el modelo de datos para soportar múltiples
 colegios en el futuro.
 
-> **Estado**: primera versión funcional (MVP) generada sin acceso a un SDK de .NET ni a Azure real
-> en el entorno de build — ver **Limitaciones conocidas** más abajo antes de desplegar a
-> producción. El código es real y compilable, organizado en capas, con datos de demostración
+> **Estado**: MVP funcional, validado con `dotnet build`/`dotnet test`/`npm run build`/`npm test`
+> reales (no solo generado) — ver **Limitaciones conocidas** más abajo antes de desplegar a
+> producción (sin Azure real ni tenant de Entra ID conectados todavía). Datos de demostración
 > **sintéticos** claramente identificados.
 
 ## Documentación
@@ -93,9 +93,19 @@ Ninguna de estas credenciales es real; se generan únicamente en el sembrado de 
 
 ## Endpoints principales (`/api/v1/…`, documentados en Swagger)
 
-`auth`, `students`, `guardians`, `employees`, `wallets`, `recharges`, `payments/webhooks/{provider}`,
-`rfid`, `catalog` (categorías/productos/precios), `inventory`, `pos` (puntos de venta, cajas,
-turnos, ventas), `reports`, `audit`, `settings`, `imports`.
+`auth` (incluye `auth/entra-login` para el personal), `students`, `guardians`, `employees`,
+`wallets`, `recharges`, `payments/webhooks/{provider}`, `rfid`, `catalog` (categorías/productos/
+precios), `inventory`, `pos` (puntos de venta, cajas, turnos, ventas), `reports`, `audit`,
+`settings`, `imports`, `roles` y `users` (administración de roles/permisos/personal).
+
+## Roles, permisos e inicio de sesión con Microsoft Entra ID
+
+- `/roles` (permiso `users.manage`): crear/editar roles y su matriz de permisos, crear cuentas de
+  personal y asignarles roles. Ver [`docs/05-roles-permisos.md`](docs/05-roles-permisos.md).
+- El personal interno puede además iniciar sesión con Microsoft Entra ID una vez que el colegio
+  conecta un tenant real — coexiste con el login local, nunca lo reemplaza. Ver
+  [`docs/06-runbook.md` §8](docs/06-runbook.md#8-conectar-un-tenant-real-de-entra-id-personal-interno)
+  para el paso a paso.
 
 ## Despliegue en Azure
 
@@ -112,7 +122,7 @@ Ver [`docs/manual-instalacion.md`](docs/manual-instalacion.md) para el comando d
 ## Pruebas implementadas
 
 ```bash
-dotnet test backend/SchoolCafeteria.sln   # unitarias + integración (SQLite en memoria)
+dotnet test backend/SchoolCafeteria.sln   # 19 unitarias + 3 integración (SQLite en memoria)
 cd frontend && npm test                    # componentes UI
 ```
 
@@ -123,16 +133,13 @@ concurrencia de cartera, etc.): [`docs/07-pruebas.md`](docs/07-pruebas.md).
 
 Ver [`docs/06-runbook.md` §6](docs/06-runbook.md#6-limitaciones-conocidas-de-esta-entrega-léase-antes-de-producción).
 En resumen: no hay migraciones de EF Core generadas (se usa `EnsureCreated` para desarrollo),
-ninguna integración externa real está conectada (todas tienen contrato + mock/sandbox), y el
-código no pudo compilarse en este entorno de build por no contar con el SDK de .NET — verificarlo
-como primer paso.
+ninguna integración externa real está conectada (todas tienen contrato + mock/sandbox), y Entra ID
+está integrado en código pero sin un tenant real conectado todavía.
 
 ## Próximos pasos recomendados
 
-1. Compilar y ejecutar la suite completa en un entorno con el SDK de .NET 8 instalado.
-2. Generar las migraciones reales de EF Core y reemplazar `EnsureCreated`.
-3. Conectar las integraciones reales (pasarela de pago, correo, RFID físico, SIS del colegio).
-4. Construir la pantalla de administración de roles/permisos.
-5. Añadir pruebas E2E (Playwright) y de carga (k6/Artillery) para hora pico.
-6. Decidir e integrar Microsoft Entra ID / Entra External ID si se requiere sobre el JWT propio ya
-   construido.
+1. Generar las migraciones reales de EF Core y reemplazar `EnsureCreated`.
+2. Conectar las integraciones reales (pasarela de pago, correo, RFID físico, SIS del colegio).
+3. Conectar un tenant real de Entra ID para el personal, si el colegio lo requiere (`docs/06-runbook.md` §8).
+4. Añadir pruebas E2E (Playwright) y de carga (k6/Artillery) para hora pico.
+5. Evaluar Entra External ID para el portal de tutores/estudiantes si se decide reemplazar el login local ahí también.

@@ -4,12 +4,13 @@ import { FormEvent, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 import { ApiError } from '@/lib/api-client';
+import { isEntraConfigured } from '@/lib/msal';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/Card';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, loginWithEntra } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,6 +18,7 @@ export default function LoginPage() {
   const [needsMfa, setNeedsMfa] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isEntraSubmitting, setIsEntraSubmitting] = useState(false);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -36,6 +38,19 @@ export default function LoginPage() {
       }
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function onEntraLogin() {
+    setError(null);
+    setIsEntraSubmitting(true);
+    try {
+      await loginWithEntra();
+      router.push('/');
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No fue posible iniciar sesión con Microsoft.');
+    } finally {
+      setIsEntraSubmitting(false);
     }
   }
 
@@ -80,6 +95,20 @@ export default function LoginPage() {
             <Button type="submit" disabled={isSubmitting} className="w-full">
               {isSubmitting ? 'Ingresando…' : 'Ingresar'}
             </Button>
+
+            {isEntraConfigured() && (
+              <>
+                <div className="flex items-center gap-3 text-xs text-slate-400">
+                  <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                  o, si eres personal del colegio
+                  <span className="h-px flex-1 bg-slate-200 dark:bg-slate-700" />
+                </div>
+                <Button type="button" variant="secondary" disabled={isEntraSubmitting} className="w-full" onClick={onEntraLogin}>
+                  {isEntraSubmitting ? 'Conectando…' : 'Iniciar sesión con Microsoft'}
+                </Button>
+              </>
+            )}
+
             <p className="text-center text-xs text-slate-500">
               Datos de demostración sintéticos — ver README para las credenciales de prueba.
             </p>

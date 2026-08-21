@@ -17,6 +17,7 @@ const NAV = [
   { href: '/inventory', label: 'Inventario', permission: 'inventory.read' },
   { href: '/reports', label: 'Reportes', permission: 'reports.read' },
   { href: '/audit', label: 'Auditoría', permission: 'audit.read' },
+  { href: '/roles', label: 'Roles y permisos', permission: 'users.manage' },
   { href: '/settings', label: 'Configuración', permission: 'settings.write' }
 ];
 

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OtpNet;
+using SchoolCafeteria.Application.Abstractions;
 using SchoolCafeteria.Application.Common;
 using SchoolCafeteria.Application.DTOs;
 using SchoolCafeteria.Domain.Entities;
@@ -7,8 +8,11 @@ using SchoolCafeteria.Domain.Entities;
 namespace SchoolCafeteria.Application.Services;
 
 /// <summary>
-/// JWT auth with optional TOTP MFA. In v1 this replaces Microsoft Entra ID (no real tenant exists
-/// in this build environment) — see ADR-6 in docs/02-arquitectura.md for the migration path.
+/// Two coexisting login paths, both landing on the same JWT: local email/password (+ optional TOTP
+/// MFA) for any account, and Microsoft Entra ID for staff whose User row is already provisioned
+/// and linked (by EntraObjectId, or by email on first Entra sign-in). Either way, authorization
+/// downstream of login is identical — permissions always come from this User's own
+/// UserRole/RolePermission rows, never from claims embedded in an external token.
 /// </summary>
 public class AuthService
 {
@@ -19,13 +23,17 @@ public class AuthService
     private readonly IAppDbContext _db;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
+    private readonly IEntraIdTokenValidator _entraIdTokenValidator;
     private readonly IDateTimeProvider _clock;
 
-    public AuthService(IAppDbContext db, IPasswordHasher passwordHasher, ITokenService tokenService, IDateTimeProvider clock)
+    public AuthService(
+        IAppDbContext db, IPasswordHasher passwordHasher, ITokenService tokenService,
+        IEntraIdTokenValidator entraIdTokenValidator, IDateTimeProvider clock)
     {
         _db = db;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
+        _entraIdTokenValidator = entraIdTokenValidator;
         _clock = clock;
     }
 
@@ -53,6 +61,47 @@ public class AuthService
         user.LockedUntilUtc = null;
         user.LastLoginAtUtc = _clock.UtcNow;
 
+        return await IssueTokensAsync(user, ipAddress, ct);
+    }
+
+    /// <summary>
+    /// Staff-only Entra ID login (see docs/06-runbook.md for scope: Administrador, Finanzas,
+    /// Supervisor, Operador, Auditor — tutors/students keep the local flow). The User row must
+    /// already exist (created by an administrator via UserAdminService); this never auto-creates
+    /// an account, only links one on first successful Entra sign-in. Local password login and MFA
+    /// remain fully available afterwards — Entra ID is an additional front door, not a replacement.
+    /// </summary>
+    public async Task<LoginResult> LoginWithEntraIdAsync(EntraIdLoginRequest request, string? ipAddress, CancellationToken ct = default)
+    {
+        var claims = await _entraIdTokenValidator.ValidateAsync(request.IdToken, ct);
+
+        var user = await _db.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ThenInclude(r => r!.RolePermissions).ThenInclude(rp => rp.Permission)
+            .FirstOrDefaultAsync(u => u.EntraObjectId == claims.ObjectId, ct);
+
+        if (user is null)
+        {
+            // First Entra sign-in for this person: link by email to a pre-provisioned staff account.
+            user = await _db.Users.Include(u => u.UserRoles).ThenInclude(ur => ur.Role).ThenInclude(r => r!.RolePermissions).ThenInclude(rp => rp.Permission)
+                .FirstOrDefaultAsync(u => u.Email == claims.Email, ct);
+
+            if (user is null)
+                throw new BusinessRuleException("auth.not_provisioned",
+                    "No existe una cuenta de personal asociada a este correo. Solicite a un administrador que la cree primero.");
+
+            user.EntraObjectId = claims.ObjectId;
+        }
+
+        if (!user.IsActive)
+            throw new BusinessRuleException("auth.inactive", "Esta cuenta está desactivada.");
+        if (user.LockedUntilUtc is not null && user.LockedUntilUtc > _clock.UtcNow)
+            throw new BusinessRuleException("auth.locked", $"Cuenta bloqueada temporalmente hasta {user.LockedUntilUtc:u}.");
+
+        user.LastLoginAtUtc = _clock.UtcNow;
+        return await IssueTokensAsync(user, ipAddress, ct);
+    }
+
+    private async Task<LoginResult> IssueTokensAsync(User user, string? ipAddress, CancellationToken ct)
+    {
         var roles = user.UserRoles.Select(ur => ur.Role!.Name).Distinct().ToList();
         var permissions = user.UserRoles.SelectMany(ur => ur.Role!.RolePermissions.Select(rp => rp.Permission!.Key)).Distinct().ToList();
 

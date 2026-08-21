@@ -26,6 +26,7 @@ public static class ModelConfiguration
     private static void ConfigureIdentity(ModelBuilder b)
     {
         b.Entity<User>().HasIndex(u => new { u.SchoolId, u.Email }).IsUnique();
+        b.Entity<User>().HasIndex(u => u.EntraObjectId).IsUnique().HasFilter("[EntraObjectId] IS NOT NULL");
         b.Entity<Role>().HasIndex(r => new { r.SchoolId, r.Name }).IsUnique();
         b.Entity<Permission>().HasIndex(p => p.Key).IsUnique();
         b.Entity<RolePermission>().HasIndex(rp => new { rp.RoleId, rp.PermissionId }).IsUnique();

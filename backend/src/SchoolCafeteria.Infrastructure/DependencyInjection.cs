@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddSingleton<IFileStorage, LocalFileStorage>();
         services.AddScoped<IStudentSourceAdapter, CsvStudentSourceAdapter>();
         services.AddSingleton<IRfidReaderProvider, KeyboardWedgeRfidReaderProvider>();
+        services.AddSingleton<IEntraIdTokenValidator, EntraIdTokenValidator>();
 
         services.AddScoped<WalletLedgerService>();
         services.AddScoped<InventoryLedgerService>();
@@ -57,6 +58,8 @@ public static class DependencyInjection
         services.AddScoped<ReportService>();
         services.AddScoped<AuditService>();
         services.AddScoped<SettingsService>();
+        services.AddScoped<RoleService>();
+        services.AddScoped<UserAdminService>();
 
         services.AddHostedService<NotificationDispatcherService>();
 
