@@ -11,6 +11,8 @@ proveedor InMemory de EF Core):
 | `InventoryLedgerServiceTests` | Salida de inventario reduce balance; salida que excede existencias se rechaza sin alterar el balance. |
 | `SaleServiceTests` | Checkout descuenta cartera y reduce inventario correctamente; doble clic en "Cobrar" con la misma `IdempotencyKey` no duplica el cobro; venta con stock insuficiente revierte el débito de cartera ya aplicado (transacción atómica) sin dejar una venta huérfana. |
 | `RechargeServiceTests` | Webhook de pago entregado dos veces solo acredita una vez (idempotencia de webhook); webhook con monto manipulado no completa la recarga (validación de importe). |
+| `RoleServiceTests` | `SetPermissionsAsync` reemplaza el conjunto completo de permisos de un rol (agrega y quita en la misma llamada); rechaza claves de permiso desconocidas; no permite eliminar un rol con usuarios asignados ni un rol predefinido del sistema. |
+| `AuthServiceEntraIdTests` | Login con Entra ID sin cuenta de personal previamente creada lanza `auth.not_provisioned`; primer login vincula la cuenta local por correo y guarda el `EntraObjectId`; logins posteriores resuelven por `EntraObjectId` aunque el correo en Entra haya cambiado; una cuenta inactiva no puede iniciar sesión por ninguna vía. |
 
 **SchoolCafeteria.IntegrationTests** (`WebApplicationFactory` + SQLite, pipeline HTTP real):
 

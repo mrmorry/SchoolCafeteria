@@ -17,6 +17,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
     <PackageReference Include="MailKit" Version="4.17.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.0.2" />
+    <PackageReference Include="Microsoft.IdentityModel.Protocols.OpenIdConnect" Version="8.0.2" />
   </ItemGroup>
 
   <!-- Brings in IHttpContextAccessor, ClaimsPrincipal.FindFirstValue, IConfigurationSection.Get<T>,

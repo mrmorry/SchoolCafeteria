@@ -3,8 +3,10 @@
 Los permisos son datos (tabla `Permission`/`RolePermission`), no nombres de rol codificados en el
 código de autorización — la API valida claims `permission` embebidos en el JWT en el momento del
 login (`Api/Auth/PermissionAuthorization.cs`). Esta matriz refleja el seed de demostración
-(`DemoDataSeeder.cs`) y es completamente editable desde la base de datos / futura pantalla de
-administración de roles.
+(`DemoDataSeeder.cs`) y es completamente editable desde la pantalla **`/roles`** (requiere el
+permiso `users.manage`, típicamente solo Administrador): crear/eliminar roles, marcar/desmarcar
+permisos por rol, crear cuentas de personal y asignarles roles. Los endpoints subyacentes son
+`/api/v1/roles` y `/api/v1/users` (`RoleService`/`UserAdminService`).
 
 | Permiso | Administrador | Finanzas | Supervisor | Operador | Auditor | Tutor |
 |---|:---:|:---:|:---:|:---:|:---:|:---:|

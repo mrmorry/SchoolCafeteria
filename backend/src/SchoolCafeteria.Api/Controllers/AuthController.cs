@@ -19,6 +19,13 @@ public class AuthController : ControllerBase
     public async Task<ActionResult<LoginResult>> Login(LoginRequest request, CancellationToken ct)
         => Ok(await _authService.LoginAsync(request, HttpContext.Connection.RemoteIpAddress?.ToString(), ct));
 
+    /// <summary>Staff login via Microsoft Entra ID — coexists with /login, never replaces it. See
+    /// docs/06-runbook.md for how to connect a real Entra ID tenant.</summary>
+    [HttpPost("entra-login")]
+    [AllowAnonymous]
+    public async Task<ActionResult<LoginResult>> EntraLogin(EntraIdLoginRequest request, CancellationToken ct)
+        => Ok(await _authService.LoginWithEntraIdAsync(request, HttpContext.Connection.RemoteIpAddress?.ToString(), ct));
+
     [HttpPost("refresh")]
     [AllowAnonymous]
     public async Task<ActionResult<LoginResult>> Refresh(RefreshRequest request, CancellationToken ct)

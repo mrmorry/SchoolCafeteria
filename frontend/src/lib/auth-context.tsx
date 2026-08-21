@@ -3,12 +3,14 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch, setAccessToken, setRefreshToken, setUnauthorizedHandler } from './api-client';
+import { loginWithEntraId } from './msal';
 import type { LoginResult, UserProfile } from './types';
 
 interface AuthContextValue {
   user: UserProfile | null;
   isLoading: boolean;
   login: (email: string, password: string, mfaCode?: string) => Promise<void>;
+  loginWithEntra: () => Promise<void>;
   logout: () => void;
   hasPermission: (key: string) => boolean;
   hasRole: (role: string) => boolean;
@@ -42,23 +44,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => setUnauthorizedHandler(null);
   }, [logout]);
 
-  const login = useCallback(async (email: string, password: string, mfaCode?: string) => {
-    const result = await apiFetch<LoginResult>('/api/v1/auth/login', {
-      method: 'POST',
-      body: { email, password, mfaCode: mfaCode || null }
-    });
+  const applyLoginResult = useCallback((result: LoginResult) => {
     setAccessToken(result.accessToken);
     setRefreshToken(result.refreshToken);
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(result.user));
     setUser(result.user);
   }, []);
 
+  const login = useCallback(
+    async (email: string, password: string, mfaCode?: string) => {
+      const result = await apiFetch<LoginResult>('/api/v1/auth/login', {
+        method: 'POST',
+        body: { email, password, mfaCode: mfaCode || null }
+      });
+      applyLoginResult(result);
+    },
+    [applyLoginResult]
+  );
+
+  const loginWithEntra = useCallback(async () => {
+    const idToken = await loginWithEntraId();
+    const result = await apiFetch<LoginResult>('/api/v1/auth/entra-login', { method: 'POST', body: { idToken } });
+    applyLoginResult(result);
+  }, [applyLoginResult]);
+
   const hasPermission = useCallback((key: string) => user?.permissions.includes(key) ?? false, [user]);
   const hasRole = useCallback((role: string) => user?.roles.includes(role) ?? false, [user]);
 
   const value = useMemo(
-    () => ({ user, isLoading, login, logout, hasPermission, hasRole }),
-    [user, isLoading, login, logout, hasPermission, hasRole]
+    () => ({ user, isLoading, login, loginWithEntra, logout, hasPermission, hasRole }),
+    [user, isLoading, login, loginWithEntra, logout, hasPermission, hasRole]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

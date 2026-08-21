@@ -57,43 +57,72 @@
 
 ## 6. Limitaciones conocidas de esta entrega (léase antes de producción)
 
-Este build se generó en un entorno sin SDK de .NET ni acceso a Azure real, por lo que:
-
 1. **No hay migraciones de EF Core generadas.** El arranque usa `Database.EnsureCreated()` para
-   crear el esquema directamente desde el modelo. Antes de cualquier despliegue real: instalar el
-   SDK de .NET 8, ejecutar `dotnet ef migrations add InitialCreate` dentro de
-   `backend/src/SchoolCafeteria.Infrastructure`, y reemplazar el bloque de arranque en
-   `Program.cs` por `dbContext.Database.MigrateAsync()`.
+   crear el esquema directamente desde el modelo. Antes de cualquier despliegue real: ejecutar
+   `dotnet ef migrations add InitialCreate` dentro de `backend/src/SchoolCafeteria.Infrastructure`,
+   y reemplazar el bloque de arranque en `Program.cs` por `dbContext.Database.MigrateAsync()`.
 2. **Ninguna integración externa real está conectada**: pasarela de pagos (sandbox propio),
    proveedor de correo (SMTP/Mailhog), lector RFID (modo teclado), sistema escolar externo (CSV
    manual). Todas están detrás de interfaces (`IPaymentGateway`, `IEmailSender`,
    `IRfidReaderProvider`, `IStudentSourceAdapter`) listas para una implementación real.
-2. **Los proyectos .NET y Next.js no fueron compilados ni ejecutados en este entorno** (no había
-   `dotnet` ni forma de validar contra Azure real): revíselos con `dotnet build` / `npm install &&
-   npm run build` como primer paso antes de desplegar.
 3. **Almacenamiento de archivos** usa el sistema de archivos local del contenedor en desarrollo
    (`LocalFileStorage`); en Azure debe reemplazarse por el adaptador de Blob Storage (contrato ya
    definido, implementación pendiente) — nunca depender de disco local persistente en producción.
 4. **Colas** se simulan con una tabla *outbox* en base de datos en vez de Service Bus real; el
    recurso de Service Bus ya está provisto en Bicep para cuando se conecte el adaptador real.
-5. **Entra ID** no está integrado (no hay tenant en este entorno); se usa JWT propio + MFA TOTP.
-   La migración a Entra ID / Entra External ID es un cambio localizado en `Infrastructure.Services`
-   y `Api/Auth`, sin tocar el dominio.
-6. **Gestión de roles/permisos** no tiene pantalla CRUD en el frontend todavía (se administra por
-   base de datos / futuros endpoints); la matriz vigente está documentada en
-   `docs/05-roles-permisos.md`.
-7. **Pruebas E2E de UI** (Playwright/Cypress) y **pruebas de carga** no se incluyen en esta
+5. **Microsoft Entra ID** está integrado para el personal interno (ver §8) pero **sin un tenant
+   real configurado** — `EntraId:TenantId`/`ClientId` quedan vacíos por defecto, lo que oculta el
+   botón "Iniciar sesión con Microsoft" y hace que `/api/v1/auth/entra-login` responda
+   `auth.entra_not_configured`. El login local (correo/contraseña + MFA TOTP) sigue siendo la vía
+   principal y funciona sin ninguna configuración adicional. Entra External ID (portal de
+   tutores/estudiantes) no está integrado — se evaluó y se decidió mantener esos dos roles en el
+   login local únicamente.
+6. **Pruebas E2E de UI** (Playwright/Cypress) y **pruebas de carga** no se incluyen en esta
    entrega; sí se incluyen pruebas unitarias e de integración del backend cubriendo los flujos
-   financieros críticos (ver `docs/07-pruebas.md`).
+   financieros críticos y de autenticación (ver `docs/07-pruebas.md`).
+7. **Next.js 14.2.35 / eslint-config-next**: quedan algunas vulnerabilidades de baja/moderada
+   severidad que solo se resuelven saltando a Next 15/16 (cambio mayor no incluido en este MVP).
 
 ## 7. Próximos pasos recomendados
 
-1. Compilar y ejecutar la suite completa (`dotnet test`, `npm test`) en un entorno con SDK.
-2. Generar las migraciones reales de EF Core.
-3. Definir y conectar: pasarela de pago real, proveedor de correo/SMS, lector RFID físico, SIS
+1. Generar las migraciones reales de EF Core (ver §6.1).
+2. Definir y conectar: pasarela de pago real, proveedor de correo/SMS, lector RFID físico, SIS
    externo.
-4. Añadir pantallas de administración de roles/permisos y de conciliación de pagos.
-5. Añadir Playwright para pruebas E2E de UI y k6/Artillery para pruebas de carga en hora pico.
-6. Habilitar Entra ID para usuarios internos y Entra External ID (o el mecanismo local ya
-   construido) para tutores/estudiantes, según la decisión final del colegio.
-7. Activar auditoría de Azure SQL y Private Link antes de manejar datos reales de menores.
+3. Conectar un tenant real de Entra ID para el personal (ver §8) si el colegio lo requiere.
+4. Añadir Playwright para pruebas E2E de UI y k6/Artillery para pruebas de carga en hora pico.
+5. Evaluar Entra External ID para el portal de tutores/estudiantes si se decide reemplazar el
+   login local ahí también.
+6. Activar auditoría de Azure SQL y Private Link antes de manejar datos reales de menores.
+
+## 8. Conectar un tenant real de Entra ID (personal interno)
+
+El backend y el frontend ya están listos para autenticar al personal (Administrador, Finanzas,
+Supervisor, Operador, Auditor) contra Microsoft Entra ID — falta únicamente registrar la
+aplicación en un tenant real y completar la configuración. Tutores y estudiantes **no** usan este
+mecanismo, siguen con el login local.
+
+1. **Registrar la aplicación** en [Azure Portal → Microsoft Entra ID → App registrations → New
+   registration]. Tipo de cuenta: "Accounts in this organizational directory only" (single-tenant)
+   salvo que el colegio requiera otra cosa.
+2. **Plataforma**: agregar "Single-page application (SPA)" con el redirect URI de la app web (p.
+   ej. `https://cafeteria.micolegio.edu/` en producción, `http://localhost:3000/` en local). MSAL
+   usa `loginPopup`, por lo que basta con el origen — no se necesita un callback path específico.
+3. **Anotar** el *Application (client) ID* y el *Directory (tenant) ID* de la página "Overview".
+4. **Backend** (`backend/src/SchoolCafeteria.Api/appsettings.json` o, mejor, variables de entorno /
+   Key Vault en producción):
+   ```json
+   "EntraId": { "Instance": "https://login.microsoftonline.com/", "TenantId": "<tenant-id>", "ClientId": "<client-id>" }
+   ```
+   En Docker Compose, definir `ENTRA_TENANT_ID` y `ENTRA_CLIENT_ID` en `.env`.
+5. **Frontend**: definir `NEXT_PUBLIC_ENTRA_CLIENT_ID` y `NEXT_PUBLIC_ENTRA_TENANT_ID` (mismos
+   valores) — son variables `NEXT_PUBLIC_*`, se inyectan en tiempo de build (ver
+   `frontend/.env.local.example` y los `ARG` del `Dockerfile`).
+6. **Provisionar las cuentas de staff primero.** El login con Entra ID nunca crea una cuenta
+   automáticamente — un Administrador debe crear cada usuario de personal desde `/roles`
+   (sección "Usuarios de personal") con el mismo correo que tiene en Entra ID, y asignarle su rol,
+   **antes** de que esa persona pueda iniciar sesión con Microsoft. La primera vez que inicia
+   sesión con Entra ID, el sistema vincula automáticamente esa cuenta por correo (guardando el
+   `oid` de Entra); a partir de ahí el vínculo es por `oid`, no por correo, así que un cambio de
+   correo en Entra ID no rompe el acceso.
+7. Reiniciar/redesplegar la API y el frontend. Verificar en `/login` que aparezca el botón
+   "Iniciar sesión con Microsoft".

@@ -45,6 +45,11 @@ services:
       Payments__Sandbox__CheckoutBaseUrl: "http://localhost:3000/pay/sandbox"
       Storage__Local__RootPath: /data/storage
       Cors__AllowedOrigins__0: "http://localhost:3000"
+      # Empty by default — the local email/password login always works regardless. Set these (and
+      # the frontend's NEXT_PUBLIC_ENTRA_* build args below) once a real tenant is connected; see
+      # docs/06-runbook.md.
+      EntraId__TenantId: ${ENTRA_TENANT_ID:-}
+      EntraId__ClientId: ${ENTRA_CLIENT_ID:-}
     ports:
       - "5000:8080"
     volumes:
@@ -60,6 +65,8 @@ services:
       context: ./frontend
       args:
         NEXT_PUBLIC_API_BASE_URL: http://localhost:5000
+        NEXT_PUBLIC_ENTRA_CLIENT_ID: ${ENTRA_CLIENT_ID:-}
+        NEXT_PUBLIC_ENTRA_TENANT_ID: ${ENTRA_TENANT_ID:-}
     depends_on:
       api:
         condition: service_healthy

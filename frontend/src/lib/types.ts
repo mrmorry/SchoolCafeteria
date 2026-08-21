@@ -243,6 +243,38 @@ export interface AuditLogDto {
   correlationId?: string;
 }
 
+export interface PermissionDto {
+  id: string;
+  key: string;
+  module: string;
+  description: string;
+}
+
+export interface RoleDto {
+  id: string;
+  name: string;
+  description?: string;
+  isSystemRole: boolean;
+  permissions: string[];
+  userCount: number;
+}
+
+export interface RoleRefDto {
+  id: string;
+  name: string;
+}
+
+export interface UserSummaryDto {
+  id: string;
+  email: string;
+  fullName: string;
+  isActive: boolean;
+  mfaEnabled: boolean;
+  roles: RoleRefDto[];
+  hasEntraLink: boolean;
+  lastLoginAtUtc?: string;
+}
+
 export interface ProblemDetails {
   title?: string;
   detail?: string;
